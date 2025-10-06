@@ -1,0 +1,64 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    runs-on: square-runner
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Set up Python
+      uses: square/setup-python@v2
+      with:
+        python-version: 3.9
+    
+    - name: Install Python dependencies
+      run: |
+        cd backend
+        pip install -r requirements.txt
+    
+    - name: Run Python tests
+      run: |
+        cd backend
+        pytest
+    
+    - name: Set up Node
+      uses: square/setup-node@v2
+      with:
+        node-version: '16'
+        registry-url: 'https://global.block-artifacts.com/artifactory/api/npm/square-npm/'
+    
+    - name: Install Node dependencies
+      run: |
+        cd frontend
+        npm ci
+    
+    - name: Run frontend tests
+      run: |
+        cd frontend
+        npm test
+
+  deploy-staging:
+    needs: test
+    if: github.ref == 'refs/heads/develop'
+    runs-on: square-runner
+    steps:
+    - name: Deploy to staging
+      uses: square/deploy-action@v2
+      with:
+        environment: staging
+
+  deploy-production:
+    needs: [test, deploy-staging]
+    if: github.ref == 'refs/heads/main'
+    runs-on: square-runner
+    steps:
+    - name: Deploy to production
+      uses: square/deploy-action@v2
+      with:
+        environment: production
