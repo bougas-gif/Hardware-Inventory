@@ -1,9 +1,11 @@
 from flask import Blueprint, jsonify, request
-from snowflake import execute_query
+from ..auth import login_required
+import snowflake__execute_query
 
 bp = Blueprint('inventory', __name__)
 
 @bp.route('/api/inventory/<sku>', methods=['GET'])
+@login_required
 def get_inventory(sku):
     try:
         # Query to get inventory data
@@ -39,7 +41,7 @@ def get_inventory(sku):
             organization_code
         """
         
-        result = execute_query({
+        result = snowflake__execute_query.execute_query({
             "query": query,
             "params": [sku]
         })
@@ -75,6 +77,7 @@ def get_inventory(sku):
         }), 500
 
 @bp.route('/api/inventory/search', methods=['GET'])
+@login_required
 def search_inventory():
     query = request.args.get('q', '')
     if not query:
@@ -102,7 +105,7 @@ def search_inventory():
         LIMIT 10
         """
         
-        result = execute_query({
+        result = snowflake__execute_query.execute_query({
             "query": search_query,
             "params": [f'%{query}%', f'%{query}%']
         })

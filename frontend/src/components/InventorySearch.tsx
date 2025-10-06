@@ -14,7 +14,8 @@ import {
   TableRow,
   Autocomplete
 } from '@mui/material';
-import axios from 'axios';
+import { useAuth } from '../contexts/AuthContext';
+import { searchInventory, searchSKUs } from '../services/api';
 
 interface InventoryData {
   sku: string;
@@ -40,6 +41,7 @@ interface SearchResult {
 }
 
 const InventorySearch: React.FC = () => {
+  const { user, login } = useAuth();
   const [sku, setSku] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -53,10 +55,14 @@ const InventorySearch: React.FC = () => {
     setError(null);
     
     try {
-      const response = await axios.get(`http://localhost:5000/api/inventory/${selectedSku}`);
-      setData(response.data);
+      const data = await searchInventory(selectedSku);
+      setData(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      if (axios.isAxiosError(err) && err.response?.status === 401) {
+        login();
+      } else {
+        setError(err instanceof Error ? err.message : 'An error occurred');
+      }
       setData(null);
     } finally {
       setLoading(false);
@@ -72,13 +78,26 @@ const InventorySearch: React.FC = () => {
     }
 
     try {
-      const response = await axios.get(`http://localhost:5000/api/inventory/search?q=${value}`);
-      setSearchResults(response.data.results);
+      const { results } = await searchSKUs(value);
+      setSearchResults(results);
     } catch (err) {
       console.error('Search error:', err);
       setSearchResults([]);
     }
   };
+
+  if (!user) {
+    return (
+      <Box sx={{ textAlign: 'center', padding: 3 }}>
+        <Typography variant="h6" gutterBottom>
+          Please log in to access inventory data
+        </Typography>
+        <Button variant="contained" onClick={login}>
+          Log in with Square SSO
+        </Button>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ maxWidth: 1200, margin: '0 auto', padding: 3 }}>
