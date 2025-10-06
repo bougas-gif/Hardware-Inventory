@@ -1,18 +1,13 @@
 import React from 'react';
-import { SquareProvider, SquareTheme } from '@square/ui';
-import { AuthProvider } from '@square/auth';
+import InventorySearch from './components/InventorySearch';
 
-function App() {
+const App: React.FC = () => {
   return (
-    <SquareProvider theme={SquareTheme.light}>
-      <AuthProvider>
-        <div className="App">
-          <h1>Inventory Lookup</h1>
-          {/* Add components here */}
-        </div>
-      </AuthProvider>
-    </SquareProvider>
+    <div>
+      <h1>Hardware Inventory Lookup</h1>
+      <InventorySearch />
+    </div>
   );
-}
+};
 
 export default App;
